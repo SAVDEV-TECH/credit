@@ -350,7 +350,7 @@ export default function CreditsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-6 sm:px-8 py-6">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400 line-clamp-1">{record.description}</p>
                     {record.agreedPaymentDate && (
                       <p className="text-[10px] text-emerald-500 font-bold mt-1">
@@ -358,16 +358,16 @@ export default function CreditsPage() {
                       </p>
                     )}
                   </td>
-                  <td className="px-8 py-6 font-bold text-gray-900 dark:text-white">
+                  <td className="px-6 sm:px-8 py-6 font-bold text-gray-900 dark:text-white">
                     ₦{record.amountOwed.toLocaleString()}
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-6 sm:px-8 py-6">
                     <div className="flex flex-col">
                       <span className="font-black text-gray-900 dark:text-white">₦{record.balance.toLocaleString()}</span>
                       <span className="text-[10px] font-bold text-emerald-500">Paid ₦{record.deposited.toLocaleString()}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-6 sm:px-8 py-6">
                     <StatusBadge status={record.status} />
                   </td>
                   <td className="px-6 sm:px-8 py-6 text-right">
@@ -489,45 +489,45 @@ export default function CreditsPage() {
   );
 }
 
-function StatsCard({ title, value, trend, icon, color }: any) {
-  const colorClasses: any = {
-    amber: "bg-amber-50 dark:bg-amber-900/10 text-amber-600",
-    emerald: "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600",
-    blue: "bg-blue-50 dark:bg-blue-900/10 text-blue-600",
+function StatsCard({ title, value, trend, icon, color }: { title: string; value: string; trend: string; icon: React.ReactNode; color: string }) {
+  const colorStyles = {
+    amber: "bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50",
+    emerald: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50",
+    blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50",
   };
-
+  
   return (
-    <motion.div 
-      whileHover={{ y: -5 }}
-      className="p-6 bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-200 dark:border-gray-800 shadow-lg shadow-gray-200/10 flex flex-col gap-4"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`${colorStyles[color as keyof typeof colorStyles]} rounded-2xl p-6 border`}
     >
-      <div className="flex items-center justify-between">
-        <div className={`p-3 rounded-2xl ${colorClasses[color]}`}>
-          {icon}
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-bold text-gray-500 uppercase mb-2 tracking-widest">{title}</p>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{value}</h3>
+          <p className="text-xs font-bold text-gray-400 flex items-center gap-1">
+            <ArrowUpRight size={14} className="inline" /> {trend}
+          </p>
         </div>
-        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">
-          <ArrowUpRight size={12} />
-          {trend}
-        </div>
-      </div>
-      <div>
-        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{title}</p>
-        <p className="text-3xl font-black text-gray-900 dark:text-white">{value}</p>
+        <div className="text-3xl opacity-20">{icon}</div>
       </div>
     </motion.div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: any = {
-    paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  const statusConfig = {
+    paid: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-400", icon: <CheckCircle2 size={14} /> },
+    pending: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", icon: <Clock size={14} /> },
+    overdue: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", icon: <AlertCircle size={14} /> },
   };
-
+  
+  const config = statusConfig[status as keyof typeof statusConfig];
+  
   return (
-    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${styles[status]}`}>
-      {status}
-    </span>
+    <div className={`${config.bg} px-3 py-2 rounded-lg inline-flex items-center gap-1 text-xs font-bold ${config.text}`}>
+      {config.icon} {status.charAt(0).toUpperCase() + status.slice(1)}
+    </div>
   );
 }
