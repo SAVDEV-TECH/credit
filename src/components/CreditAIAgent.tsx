@@ -105,33 +105,33 @@ export default function CreditAIAgent({ onDebtParsed }: {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100]">
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 40, filter: "blur(10px)" }}
             animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, scale: 0.9, y: 40, filter: "blur(10px)" }}
-            className="mb-6 w-[400px] bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-white/20 dark:border-gray-800/50 overflow-hidden"
+            className="mb-4 sm:mb-6 w-[calc(100vw-2rem)] sm:w-[400px] max-h-[90vh] bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-white/20 dark:border-gray-800/50 overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="p-6 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white relative">
+            <div className="p-4 sm:p-6 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white relative flex-shrink-0">
               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                 <History size={120} />
               </div>
               <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-                    <Wallet size={20} className="text-emerald-300" />
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 flex-shrink-0">
+                    <Wallet size={18} className="sm:w-5 sm:h-5 text-emerald-300" />
                   </div>
-                  <div>
-                    <h3 className="font-black text-lg tracking-tight leading-tight">Mog Ledger Agent</h3>
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-100 opacity-80">Credit & Debt Assistant v1.0</p>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-base sm:text-lg tracking-tight leading-tight truncate">Mog Ledger Agent</h3>
+                    <p className="text-[8px] sm:text-[10px] uppercase font-bold tracking-widest text-emerald-100 opacity-80 line-clamp-1">Credit & Debt Assistant v1.0</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setIsOpen(false)} 
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-all"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-all flex-shrink-0 ml-2"
                 >
                   <X size={18} />
                 </button>
@@ -139,11 +139,11 @@ export default function CreditAIAgent({ onDebtParsed }: {
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
               {step === "input" ? (
                 <div className="space-y-4">
-                  <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30">
-                    <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                  <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 sm:p-4 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30">
+                    <p className="text-[11px] sm:text-xs font-semibold text-emerald-800 dark:text-emerald-300 leading-relaxed">
                       {isRecording ? "Listening to debt details..." : "Speak or type debt details (e.g., 'Darty owes 5k for rice, his number is 08012345678 and he will pay next week')."}
                     </p>
                   </div>
