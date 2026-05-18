@@ -10,12 +10,16 @@ export async function POST(req: Request) {
     const { message, audio, mimeType } = await req.json();
 
     if (!apiKey) {
+      console.error("GEMINI_API_KEY is not set in environment variables");
       return NextResponse.json({ error: "API Key missing" }, { status: 500 });
     }
 
+    console.log(`API Key present: ${apiKey.substring(0, 10)}...`);
+    console.log(`Received request with: message=${!!message}, audio=${!!audio}, mimeType=${mimeType}`);
+
     const modelNames = [
+      "gemini-2.0-flash",
       "gemini-1.5-flash",
-      "gemini-1.5-pro",
       "gemini-pro"
     ];
 
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
           if (resultText) { success = true; break; }
         } catch (e: any) {
           lastError = e;
+          console.error(`[${name}] Attempt ${attempt + 1} failed:`, e.message);
           if (e.message?.includes("503") || e.message?.includes("overload")) {
             await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
             continue;
@@ -80,8 +85,9 @@ export async function POST(req: Request) {
     }
 
     if (!success) {
+      console.error("All models failed. Last error:", lastError?.message);
       return NextResponse.json(
-        { error: "AI service failed", details: lastError?.message },
+        { error: "AI service failed", details: lastError?.message || "Unknown error" },
         { status: 503 }
       );
     }
