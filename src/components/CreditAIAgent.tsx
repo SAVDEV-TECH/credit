@@ -243,7 +243,7 @@ export default function CreditAIAgent({ onDebtParsed }: {
 
                      {parsedData?.description && (
                        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-                         <p className="text-xs font-medium text-gray-500 italic">\"{{parsedData.description}}\"</p>
+                         <p className="text-xs font-medium text-gray-500 italic">{parsedData.description}</p>
                        </div>
                      )}
                    </div>
