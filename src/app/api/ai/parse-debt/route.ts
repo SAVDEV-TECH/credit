@@ -78,7 +78,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid debt information", details: error.errors[0].message },
+        { error: "Invalid debt information", details: error.issues[0]?.message || "Validation failed" },
         { status: 422 }
       );
     }
