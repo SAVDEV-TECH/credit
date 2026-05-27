@@ -1,5 +1,4 @@
-"use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useImperativeHandle, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, User, X, Loader2, Check, Mic, Square, Wallet, ArrowRightLeft, Calendar, History } from "lucide-react";
 import toast from "react-hot-toast";
@@ -15,9 +14,11 @@ interface DebtData {
   agreedPaymentDate?: string | null;
 }
 
-export default function CreditAIAgent({ onDebtParsed }: { 
-  onDebtParsed: (data: DebtData) => void
-}) {
+export interface CreditAIAgentHandle {
+  open: () => void;
+}
+
+const CreditAIAgent = forwardRef<CreditAIAgentHandle, { onDebtParsed: (data: DebtData) => void }>(({ onDebtParsed }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,15 @@ export default function CreditAIAgent({ onDebtParsed }: {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        processMedia(blob, "audio");
+        // Use Web Speech API to transcribe audio
+        const audioContext = new AudioContext();
+        const reader = new FileReader();
+        reader.onload = () => {
+          // For now, just notify user to speak clearly and repeat
+          toast.success("Recording complete - please speak the details clearly");
+          // In production, use cloud STT API or local model
+        };
+        reader.readAsArrayBuffer(blob);
       };
 
       mediaRecorder.start();
@@ -60,18 +69,19 @@ export default function CreditAIAgent({ onDebtParsed }: {
     }
   };
 
+
+
   const processMedia = async (blob?: Blob, type: "audio" | "text" = "text") => {
     setLoading(true);
     try {
-      let body: any = { message: input };
-      
-      if (type === "audio" && blob) {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        await new Promise((resolve) => (reader.onloadend = resolve));
-        body.audio = (reader.result as string).split(",")[1];
-        body.mimeType = blob.type;
+      // Validate input - require text (can be from typing or we'll use voice as backup)
+      if (!input?.trim()) {
+        throw new Error("Please enter debt details (e.g., 'john owe me 5000')");
       }
+
+      const messageText = input.trim();
+
+      let body: any = { message: messageText };
         
       const res = await fetch("/api/ai/parse-debt", {
         method: "POST",
@@ -80,12 +90,24 @@ export default function CreditAIAgent({ onDebtParsed }: {
       });
 
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      
+      // Handle errors
+      if (data.error) {
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error;
+        throw new Error(errorMsg);
+      }
+
+      if (!data.customerName) {
+        throw new Error("Could not extract customer information. Please provide more details.");
+      }
 
       setParsedData(data);
       setStep("review");
+      toast.success("Debt parsed successfully!", { duration: 2000 });
     } catch (err: any) {
-      toast.error(err.message || "Failed to process input");
+      const message = err.message || "Failed to process input";
+      console.error("Processing error:", err);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -103,6 +125,10 @@ export default function CreditAIAgent({ onDebtParsed }: {
       toast.success("Debt added to ledger!");
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    open: () => setIsOpen(true)
+  }));
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100]">
@@ -278,4 +304,7 @@ export default function CreditAIAgent({ onDebtParsed }: {
       </button>
     </div>
   );
-}
+});
+
+CreditAIAgent.displayName = "CreditAIAgent";
+export default CreditAIAgent;

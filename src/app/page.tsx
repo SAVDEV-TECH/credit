@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   Users, 
@@ -18,7 +18,7 @@ import {
   Volume2,
   Smartphone
 } from "lucide-react";
-import CreditAIAgent from "@/components/CreditAIAgent";
+import CreditAIAgent, { CreditAIAgentHandle } from "@/components/CreditAIAgent";
 import { db, auth } from "@/lib/firebase";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from "firebase/auth";
@@ -44,6 +44,7 @@ export default function CreditsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const agentRef = useRef<CreditAIAgentHandle>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -68,9 +69,13 @@ export default function CreditsPage() {
       })) as DebtRecord[];
       setRecords(data);
       checkAutomatedReminders(data);
-    } catch (error) {
-      console.error("Error fetching records:", error);
-      // Fallback mock data if collection doesn't exist
+    } catch (error: any) {
+      console.error("Error fetching records:", error.message);
+      // Show warning toast but continue with demo data
+      if (error.code === 'permission-denied') {
+        toast.error("Firestore permissions denied. Using demo data.");
+      }
+      // Fallback mock data if collection doesn't exist or rules deny access
       setRecords([
         { id: "1", customerName: "Darty Tech", amountOwed: 55000, deposited: 20000, balance: 35000, description: "Bulk order of Gadgets", date: new Date().toISOString(), status: "pending", customerContact: "08012345678", agreedPaymentDate: new Date().toISOString() },
         { id: "2", customerName: "Mog Jnr", amountOwed: 12000, deposited: 12000, balance: 0, description: "Cables and Chargers", date: new Date().toISOString(), status: "paid" },
@@ -82,14 +87,36 @@ export default function CreditsPage() {
 
   const checkAutomatedReminders = (data: DebtRecord[]) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     data.forEach(record => {
-      if (record.status !== "paid" && record.agreedPaymentDate && !record.remindedAt) {
+      if (record.status !== "paid" && record.agreedPaymentDate) {
         const paymentDate = new Date(record.agreedPaymentDate);
-        if (today >= paymentDate) {
-           handleSendReminder(record, 'auto');
+        paymentDate.setHours(0, 0, 0, 0);
+        
+        // Auto-mark as overdue if payment date has passed
+        if (today > paymentDate && record.status === "pending") {
+          markRecordAsOverdue(record);
+        }
+        
+        // Send auto-reminder on payment date
+        if (today.getTime() === paymentDate.getTime() && !record.remindedAt) {
+          handleSendReminder(record, 'auto');
         }
       }
     });
+  };
+
+  const markRecordAsOverdue = async (record: DebtRecord) => {
+    if (!record.id) return;
+    try {
+      const recordRef = doc(db, "credits", record.id);
+      await updateDoc(recordRef, { status: "overdue" });
+      fetchRecords();
+    } catch (error) {
+      // Silently fail for auto-updates
+      console.error("Could not update overdue status:", error);
+    }
   };
 
   const handleSendReminder = async (record: DebtRecord, type: 'whatsapp' | 'sms' | 'auto' = 'whatsapp') => {
@@ -156,10 +183,15 @@ export default function CreditsPage() {
       };
       await addDoc(collection(db, "credits"), newRecord);
       fetchRecords();
-      toast.success("Record saved to Firestore!");
-    } catch (error) {
-      console.error("Error saving record:", error);
-      // Even if firestore fails (e.g. no collection/rules), update local state for demo
+      toast.success("Record saved successfully!");
+    } catch (error: any) {
+      console.error("Error saving record:", error.message);
+      if (error.code === 'permission-denied') {
+        toast.error("Cannot save to Firestore (permissions denied). Using local storage.");
+      } else {
+        toast.error("Failed to save. Using local storage as fallback.");
+      }
+      // Even if firestore fails, update local state for demo
       setRecords([ { ...data, status: data.balance === 0 ? "paid" : "pending", id: Date.now().toString() }, ...records]);
     }
   };
@@ -263,7 +295,10 @@ export default function CreditsPage() {
             <TrendingUp size={18} className="text-emerald-500 flex-shrink-0" />
             <span className="hidden sm:inline">Report</span>
           </button>
-          <button className="px-4 sm:px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm">
+          <button 
+            onClick={() => agentRef.current?.open()}
+            className="px-4 sm:px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm"
+          >
             <Plus size={18} className="flex-shrink-0" />
             <span>New Entry</span>
           </button>
@@ -483,8 +518,8 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      {/* AI Agent Overlay */}
-      <CreditAIAgent onDebtParsed={handleDebtParsed} />
+      {/* AI Agent Modal */}
+      <CreditAIAgent ref={agentRef} onDebtParsed={handleDebtParsed} />
     </div>
   );
 }
